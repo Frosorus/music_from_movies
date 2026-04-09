@@ -1,0 +1,8 @@
+__pycache__/
+.claude/
+.vscode/
+
+
+data/
+output/
+movie_clips.db

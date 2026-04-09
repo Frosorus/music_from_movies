@@ -1,0 +1,26 @@
+Deal in order, this is different order of importance :
+
+
+DATABASE :
+--> Repopulate database with very short word  
+    --> Add every bits (so the shortest part and words, to make sure) and then sort during scoring is probably best
+    --> EXTRACT AUDIO FEATURES MODIFIED so make sure verything works (check if no warning etc for the features)
+    --> ADD LAST MOVIES CLEANLY and reprocess full database with every word so no problem and sure everything is perfect
+        --> CLEAN PIPELINE TO ADD MOVIES AND DO EVERYTHING AUTOMATED ?
+--> NO whisper but instead ctc --> no instead stable-ts
+
+
+MATCHING:
+--> Refine score function to make sure you have the control on the values and the weights of the different components
+
+PERFORMANCE MATTERS:
+--> Make everything quicker (BATCH CLIPs EXTRACTION ON GPU and hopefully factor 3 or something we can get)
+
+Create an app
+--> THIS IS COOL, and then try a bunch of different songs
+--> so can go quicker if music was already done. Check for the file and just get to the output if needed
+    --> Same name_title then skip full pipeline and go at the end
+    --> In case of fail, we need to delete the output folder in the output file I think then
+-- while pipeline, playing the music to make us wait ? 
+--> Comparison of clips ? Like a version to show both one next to the other 
+or with a live slider thing, playing the two music videos  
