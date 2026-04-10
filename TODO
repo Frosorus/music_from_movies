@@ -4,11 +4,9 @@ Deal in order, this is different order of importance :
 DATABASE :
 --> Repopulate database with very short word  
     --> Add every bits (so the shortest part and words, to make sure) and then sort during scoring is probably best
-    --> EXTRACT AUDIO FEATURES MODIFIED so make sure verything works (check if no warning etc for the features)
     --> ADD LAST MOVIES CLEANLY and reprocess full database with every word so no problem and sure everything is perfect
-        --> CLEAN PIPELINE TO ADD MOVIES AND DO EVERYTHING AUTOMATED ?
---> NO whisper but instead ctc --> no instead stable-ts
 
+Make sure everything stays synced to the music when there is a problem with the export of one clip
 
 MATCHING:
 --> Refine score function to make sure you have the control on the values and the weights of the different components

@@ -127,7 +127,7 @@ def find_best_clips(lyric_word, lyric_audio_features, db, top_k=5):
     
     dur = float(lyric_audio_features["duration"])
     dmin, dmax = 0.5*dur, 2.0*dur
-    conf_min = 0.01
+    conf_min = 0.25
     # STAGE 1: Fast filtering by word/phonetic (uses database indexes)
     rows = db.execute("""
         SELECT *
