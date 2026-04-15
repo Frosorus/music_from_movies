@@ -1,13 +1,15 @@
-# stable-ts env (step 2 in pipeline.sh + database population)
-# Must be a separate environment — stable-ts and demucs have conflicting dependencies.
-# Install in a dedicated conda/venv environment.
-# Pin versions to the ones you tested once confirmed working.
+# stable-ts env — step 2 in pipeline.sh + database population
+# Must be a separate environment: stable-ts conflicts with demucs dependencies.
+#
+# Versions below are the latest PyPI releases found by pipreqs.
+# To pin to your tested versions, run in your working conda env:
+#   pip freeze | grep -E "stable.ts|torch|pysrt|librosa|Metafone|numpy|scipy|tqdm"
 
-stable-ts
-torch
-torchaudio
-pysrt
-numpy
-librosa
-metaphone
-tqdm
+stable-ts==2.19.1
+torch==2.11.0
+pysrt==1.1.2
+librosa==0.11.0
+Metafone==0.5
+numpy==2.4.4
+scipy==1.17.1
+tqdm==4.67.3
