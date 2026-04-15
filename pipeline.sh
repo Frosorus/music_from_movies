@@ -7,8 +7,15 @@ set -e  # Stop on any error
 SONG_LINK="$1"
 OUTPUT_DIR="$2"
 
-EXTRACT_SONG_PY="/home/kdesier/miniconda3/envs/extract_song/bin/"
-STABLE_TS_PY="/home/kdesier/miniconda3/envs/stable-ts/bin/python"
+# Path to the bin/ directory of your main conda env (yt-dlp, demucs, moviepy, librosa…)
+# Override via environment variable or edit here, e.g.:
+#   EXTRACT_SONG_BIN="/path/to/miniconda3/envs/extract_song/bin/"
+EXTRACT_SONG_PY="${EXTRACT_SONG_BIN:-}"
+
+# Full path to the Python executable in your stable-ts conda env
+# Override via environment variable or edit here, e.g.:
+#   STABLE_TS_PYTHON="/path/to/miniconda3/envs/stable-ts/bin/python"
+STABLE_TS_PY="${STABLE_TS_PYTHON:-python}"
 
 if [ -z "$SONG_LINK" ]; then
     echo "Usage: ./pipeline.sh <song_link> <output_dir>"
