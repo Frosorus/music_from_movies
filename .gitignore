@@ -2,7 +2,9 @@ __pycache__/
 .claude/
 .vscode/
 
-
 data/
 output/
 movie_clips.db
+movie_aligned_en.json
+audio_subtitles.json
+extracted_english/
