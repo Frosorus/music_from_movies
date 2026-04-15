@@ -1,7 +1,7 @@
 #!/bin/bash
 # Extract subtitles from each MKV file in the given directory
 
-DIR="/mnt/e/Videos/Films"
+DIR="${1:?Usage: ./extract.sh <video_directory>}"
 mkdir -p "$DIR/subtitles"
 # Get all the MKV files in this dir and its subdirs
 find "$DIR" -type f -name '*.mkv' | while read filename

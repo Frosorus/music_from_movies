@@ -5,7 +5,7 @@ Drops and recreates the database, then processes all movies in audio_subtitles.j
 Usage: python populate_database.py [db_path] [audio_subtitles.json]
 """
 
-import json, sqlite3, subprocess, gc, html, re, string, warnings
+import json, sqlite3, subprocess, gc, html, re, string, warnings, os
 import numpy as np
 import torch
 from pathlib import Path
@@ -19,7 +19,9 @@ from pair_movie_to_song import compute_audio_features
 
 warnings.filterwarnings('ignore')
 
-EXTRACTED_DIR = Path("/mnt/e/extracted_english/")
+# Directory where extracted SRT files are cached.
+# Override with the EXTRACTED_DIR environment variable or the third CLI argument.
+EXTRACTED_DIR = Path(os.environ.get("EXTRACTED_DIR", "./extracted_english"))
 SR = 16000
 
 
@@ -246,6 +248,8 @@ if __name__ == '__main__':
     import sys
     db_path = sys.argv[1] if len(sys.argv) > 1 else 'movie_clips.db'
     json_path = sys.argv[2] if len(sys.argv) > 2 else 'audio_subtitles.json'
+    if len(sys.argv) > 3:
+        EXTRACTED_DIR = Path(sys.argv[3])
 
     if Path(db_path).exists():
         Path(db_path).unlink()

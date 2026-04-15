@@ -108,4 +108,6 @@ def main(directory="."):
     print(f"Done. {len(output)} movies in audio_subtitles.json.")
 
 if __name__ == "__main__":
-    main("/mnt/e/Videos/Films/")
+    import sys
+    directory = sys.argv[1] if len(sys.argv) > 1 else "."
+    main(directory)

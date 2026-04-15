@@ -2,9 +2,9 @@ import json
 import subprocess
 from pathlib import Path
 
-def extract_audio_subtitle(video_file, audio_index, subtitle_index):
+def extract_audio_subtitle(video_file, audio_index, subtitle_index, output_dir="."):
     file_name = Path(video_file).with_suffix("").name
-    base = Path("/mnt/e/extracted_english/{}".format(file_name))
+    base = Path(output_dir) / file_name
 
     if audio_index is not None:
         audio_out = base.with_suffix(".audio.wav")
@@ -28,16 +28,19 @@ def extract_audio_subtitle(video_file, audio_index, subtitle_index):
             subprocess.run(cmd_sub, check=True)
             print(f"Sous-titres extraits → {subtitle_out.name}")
 
-def main(json_path="audio_subtitles.json"):
+def main(json_path="audio_subtitles.json", output_dir="."):
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     for video_file, info in data.items():
         audio_index = info.get("audio_stream_index")
         subtitle_index = info.get("subtitle_stream_index")
-        print(f"Traitement de {video_file}...")
+        print(f"Processing {video_file}...")
         if audio_index != None and subtitle_index != None :
-            extract_audio_subtitle(video_file, audio_index, subtitle_index)
+            extract_audio_subtitle(video_file, audio_index, subtitle_index, output_dir)
 
 if __name__ == "__main__":
-    main()
+    import sys
+    json_path = sys.argv[1] if len(sys.argv) > 1 else "audio_subtitles.json"
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else "."
+    main(json_path, output_dir)
