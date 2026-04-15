@@ -7,6 +7,8 @@ DATABASE :
     --> ADD LAST MOVIES CLEANLY and reprocess full database with every word so no problem and sure everything is perfect
 
 Make sure everything stays synced to the music when there is a problem with the export of one clip
+requirements.txt
+pyproject.yaml
 
 MATCHING:
 --> Refine score function to make sure you have the control on the values and the weights of the different components
