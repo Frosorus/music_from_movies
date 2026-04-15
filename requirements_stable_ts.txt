@@ -1,0 +1,13 @@
+# stable-ts env (step 2 in pipeline.sh + database population)
+# Must be a separate environment — stable-ts and demucs have conflicting dependencies.
+# Install in a dedicated conda/venv environment.
+# Pin versions to the ones you tested once confirmed working.
+
+stable-ts
+torch
+torchaudio
+pysrt
+numpy
+librosa
+metaphone
+tqdm

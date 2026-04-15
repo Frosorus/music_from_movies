@@ -1,0 +1,14 @@
+# Main pipeline env (steps 0, 1, 3, 4 in pipeline.sh)
+# Install in your primary conda/venv environment.
+# Pin versions to the ones you tested once confirmed working.
+
+yt-dlp
+moviepy
+demucs
+torch
+torchaudio
+numpy
+librosa
+scipy
+metaphone
+tqdm
