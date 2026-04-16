@@ -90,10 +90,13 @@ def score_clip(lyric_word, lyric_audio_features, clip, lyric_phonetic):
         score += energy_similarity * 10
     except (TypeError, KeyError):
         pass
-    #3d. ZCR 
-    zcr_diff = abs(clip['zero_crossing_rate'] - lyric_audio_features['zero_crossing_rate'])
-    zcr_similarity = max(0, 1 - (zcr_diff / 0.2))
-    score += zcr_similarity * 10
+    # 3d. ZCR
+    try:
+        zcr_diff = abs(clip['zero_crossing_rate'] - lyric_audio_features['zero_crossing_rate'])
+        zcr_similarity = max(0, 1 - (zcr_diff / 0.2))
+        score += zcr_similarity * 10
+    except (TypeError, KeyError):
+        pass
     # 4. MOVIE DIVERSITY penalty (-1 per previous use of same movie for same word, Make sure highest quality sound with tiny penalty)
     usage_penalty = word_movie_usage[(lyric_word.lower(), clip['movie_name'])] * 1
     score -= usage_penalty
@@ -161,7 +164,7 @@ def find_best_clips(lyric_word, lyric_audio_features, db, top_k=5):
     for clip in candidates:
         # print(f"energy ref: {lyric_audio_features['energy']}, clip energy: {clip['energy']}, clip word: {clip.get('word')}, movie: {clip.get('movie_name')}")
 
-        clip["gain_db"] = gain_db_from_rms(lyric_audio_features["energy"], clip["energy"])
+        clip["gain_db"] = gain_db_from_rms(lyric_audio_features["energy"], clip["energy"]) if lyric_audio_features.get("energy") else 0.0
         clip["gain_pitch"] = gain_pitch(lyric_audio_features.get('pitch_mean'), clip['pitch_mean']) 
     # STAGE 2: Score candidates
     scored_clips = [(score_clip(cleaned_word, lyric_audio_features, clip, lyric_phonetic), clip)
