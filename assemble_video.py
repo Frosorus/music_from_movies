@@ -82,6 +82,35 @@ def extract_clip_ffmpeg(video_path, start, word_duration_song, total_duration, o
     return result.returncode == 0
 
 
+def is_valid_clip(path):
+    """Return True if ffprobe can read a video stream from the clip."""
+    r = subprocess.run(
+        ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+         '-show_entries', 'stream=codec_type',
+         '-of', 'default=noprint_wrappers=1:nokey=1', path],
+        capture_output=True, text=True
+    )
+    return r.returncode == 0 and r.stdout.strip() != ''
+
+
+def generate_black_screen(duration, output_path):
+    """Generate a black 1920x1080 clip with silence for the given duration."""
+    duration = max(duration, 0.1)
+    cmd = [
+        'ffmpeg', '-y',
+        '-f', 'lavfi', '-i', 'color=c=black:size=1920x1080:rate=30',
+        '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000',
+        '-t', str(duration),
+        '-c:v', 'h264_nvenc', '-preset', 'p1', '-rc', 'vbr', '-cq:v', '22',
+        '-pix_fmt', 'yuv420p',
+        '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709',
+        '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2',
+        output_path
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return result.returncode == 0
+
+
 def build_instrumental_ffmpeg(metadata_path, output_dir):
     """
     Mix all non-vocal stems into one instrumental track using ffmpeg.
@@ -140,16 +169,17 @@ def assemble_music_video(matched_clips_path, metadata_path, output_dir='./output
         instrumental_path = build_instrumental_ffmpeg(metadata_path, output_dir)
         
         # 3. Filter valid matches and compute extended durations
+        # actual_video_path is None when a black screen should be used instead
         valid_matches = []
         for match in matches:
             selected = match.get('selected')
             if selected is None:
+                valid_matches.append((match, None))
                 continue
             audio_path = selected.get('movie_path')
-            if not audio_path:
-                continue
             actual_video_path = audio_path
-            if actual_video_path is None or not os.path.exists(actual_video_path):
+            if not audio_path or not os.path.exists(actual_video_path):
+                valid_matches.append((match, None))
                 continue
             valid_matches.append((match, actual_video_path))
         
@@ -166,70 +196,81 @@ def assemble_music_video(matched_clips_path, metadata_path, output_dir='./output
         clip_files = []
         
         clip_path = os.path.join(temp_dir, f'clip_intro.mkv')
-        intro_idx = int(random.random()*len(valid_matches))
-        actual_video_path = valid_matches[intro_idx][1]
-        match = valid_matches[intro_idx][0]
-        selected = match['selected']
-        movie_timestamp = selected['timestamp']
         total_duration = valid_matches[0][0]['song_start']
-        word_duration_movie = selected['duration']
-        audio_path = selected['movie_path']
-        
-        success = extract_clip_ffmpeg(
-            actual_video_path,
-            movie_timestamp,
-            0,
-            total_duration,
-            clip_path,
-            1, 
-            audio_path,
-            1,
-            0.0,
-            selected['audio_stream_index']
-        )
+        real_matches = [(m, p) for m, p in valid_matches if p is not None]
+        if real_matches:
+            match, actual_video_path = real_matches[int(random.random() * len(real_matches))]
+            selected = match['selected']
+            success = extract_clip_ffmpeg(
+                actual_video_path,
+                selected['timestamp'],
+                0,
+                total_duration,
+                clip_path,
+                1,
+                selected['movie_path'],
+                1,
+                0.0,
+                selected['audio_stream_index']
+            )
+            if not success or not os.path.exists(clip_path) or os.path.getsize(clip_path) == 0:
+                success = generate_black_screen(total_duration, clip_path)
+        else:
+            success = generate_black_screen(total_duration, clip_path)
         clip_files.append({
-                    'path': clip_path,
-                    'song_start': 0,
-                    'duration': total_duration
-                })
+            'path': clip_path,
+            'song_start': 0,
+            'duration': total_duration
+        })
         for idx, (match, actual_video_path) in enumerate(tqdm(valid_matches, desc="Extracting clips")):
             selected = match['selected']
             song_start = match['song_start']
             word_duration = match['song_duration']
-            movie_timestamp = selected['timestamp']
-            word_duration_movie = selected['duration']
-            audio_path = selected['movie_path']
-            
+
             # Extend video to fill gap until next word (or song end)
             if idx < len(valid_matches) - 1:
                 next_song_start = valid_matches[idx + 1][0]['song_start']
                 total_duration = next_song_start - song_start
             else:
-                # Last clip: extend to song end
                 total_duration = song_duration - song_start
 
-            # Safety: cap at reasonable length, minimum is word duration (PROBABLY NOT NECESSARY) 
             total_duration = max(word_duration, total_duration)
 
-            
-            ratio = word_duration_movie/word_duration
-            gain_db = selected['gain_db']
-            gain_pitch = selected['gain_pitch']
-            audio_stream_index = selected['audio_stream_index']
+            # nvenc produces corrupt MKV for very short durations — enforce a minimum
+            total_duration = max(total_duration, 0.1)
 
             clip_path = os.path.join(temp_dir, f'clip_{idx:04d}.mkv')
-            success = extract_clip_ffmpeg(
-                actual_video_path,
-                movie_timestamp,
-                word_duration,
-                total_duration,
-                clip_path,
-                ratio, 
-                audio_path,
-                gain_db,
-                gain_pitch, 
-                audio_stream_index
-            )
+            if actual_video_path is None:
+                success = generate_black_screen(total_duration, clip_path)
+            else:
+                movie_timestamp = selected['timestamp']
+                word_duration_movie = selected['duration']
+                audio_path = selected['movie_path']
+                ratio = word_duration_movie / word_duration
+                gain_db = selected['gain_db']
+                gain_pitch = selected['gain_pitch']
+                audio_stream_index = selected['audio_stream_index']
+                success = extract_clip_ffmpeg(
+                    actual_video_path,
+                    movie_timestamp,
+                    word_duration,
+                    total_duration,
+                    clip_path,
+                    ratio,
+                    audio_path,
+                    gain_db,
+                    gain_pitch,
+                    audio_stream_index
+                )
+                if not success or not os.path.exists(clip_path) or os.path.getsize(clip_path) == 0:
+                    print(f"  Warning: clip export failed for '{match['word']}', using black screen")
+                    success = generate_black_screen(total_duration, clip_path)
+
+            # Validate the clip regardless of how it was produced — nvenc can
+            # return exit code 0 but write a corrupt MKV in edge cases
+            if os.path.exists(clip_path) and not is_valid_clip(clip_path):
+                print(f"  Warning: corrupt clip detected for '{match.get('word', '?')}', using black screen")
+                success = generate_black_screen(total_duration, clip_path)
 
             if success and os.path.exists(clip_path) and os.path.getsize(clip_path) > 0:
                 clip_files.append({
@@ -254,6 +295,7 @@ def assemble_music_video(matched_clips_path, metadata_path, output_dir='./output
                 # Escape single quotes in path for ffmpeg
                 escaped_path = clip_info['path'].replace("'", "'\\''")
                 f.write(f"file '{escaped_path}'\n")
+                f.write(f"duration {clip_info['duration']:.6f}\n")
 
         # 5. Concatenate all clips (no re-encoding, very fast)
         video_only_path = os.path.join(temp_dir, 'video_only.mp4')
@@ -268,8 +310,8 @@ def assemble_music_video(matched_clips_path, metadata_path, output_dir='./output
         ]
         result = subprocess.run(concat_cmd, capture_output=True, text=True)
 
-        if result.returncode != 0:
-            # If copy fails (different codecs/resolutions), re-encode
+        concat_failed = result.returncode != 0 or 'Impossible to open' in result.stderr or 'invalid' in result.stderr
+        if concat_failed:
             print("  Concat copy failed, re-encoding...")
             concat_cmd = [
                 'ffmpeg', '-y',

@@ -119,6 +119,15 @@ def pair_lyrics_to_clips(lyrics_path, db_path='movie_clips.db', output_dir='./ou
         # Extract audio features from the song's word
         audio_features = extract_word_audio_features(vocals_file, start, end)
         if audio_features is None:
+            print(f"  Warning: Could not extract features for '{word}' — black screen will be used")
+            matched_clips.append({
+                'word': word_data['text'],
+                'song_start': start,
+                'song_end': end,
+                'song_duration': end - start,
+                'candidates': [],
+                'selected': None
+            })
             continue
 
         word_energy = audio_features.get('energy')
